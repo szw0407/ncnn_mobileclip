@@ -60,7 +60,7 @@ class ClipProjection(nn.Module):
     def forward(self, x):
         return x @ self.projection_layer
 
-def export(model_name, image_path=None):
+def export(model_name, image_path=None, fp16=False):
     # 验证模型名称有效性
     valid_models = [
         'mobileclip_s0', 'mobileclip_s1', 'mobileclip_s2',
@@ -96,21 +96,21 @@ def export(model_name, image_path=None):
     image_encoder = ClipImageEncoder(model)
     pnnx.export(image_encoder,
                 f'{export_dir}/image_encoder.pt',
-                input_image,)
+                input_image,fp16=fp16)
 
     # 导出文本编码器
     text_encoder = ClipTextEncoder(model)
     input_text = tokenizer(["Test"])  # 单样本输入
     pnnx.export(text_encoder,
                 f'{export_dir}/text_encoder.pt',
-                input_text)
+                input_text,fp16=fp16)
 
     # 导出投影层
     input_embed = torch.ones((1, 1, 512), dtype=torch.float32)
     projection_layer = ClipProjection(model)
     pnnx.export(projection_layer,
                 f'{export_dir}/projection_layer.pt',
-                input_embed)
+                input_embed,fp16=fp16)
 
     print(f"模型已成功导出到: {export_dir}/")
     print(f"图像编码器输入尺寸: {input_image.shape}")
