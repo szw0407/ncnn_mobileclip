@@ -44,13 +44,11 @@ class SEBlock(nn.Module):
 
     def forward(self, inputs: torch.Tensor) -> torch.Tensor:
         """Apply forward pass."""
-        b, c, h, w = inputs.size()
-        x = F.avg_pool2d(inputs, kernel_size=[h, w])
+        x = F.adaptive_avg_pool2d(inputs, output_size=1) # fix pnnx.expression error
         x = self.reduce(x)
         x = F.relu(x)
         x = self.expand(x)
         x = torch.sigmoid(x)
-        x = x.view(-1, c, 1, 1)
         return inputs * x
 
 

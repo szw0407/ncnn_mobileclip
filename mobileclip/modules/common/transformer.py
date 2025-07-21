@@ -44,8 +44,9 @@ class LayerNormFP32(nn.LayerNorm):
     def forward(self, x: Tensor) -> Tensor:
         # Convert input from dtype X to FP32 and perform normalization operation.
         # This may help with underflow/overflow issues that we typically see with normalization layers
-        inp_dtype = x.dtype
-        return super().forward(x.to(torch.float32)).to(inp_dtype)
+
+        # fix export op 'to' when export it must be in float32
+        return super().forward(x)
 
 
 def get_normalization_layer(norm_type, num_features):
@@ -293,9 +294,15 @@ class MultiHeadAttention(nn.Module):
                 float("-inf"),
             )
 
+        """
         attn_dtype = attn.dtype
         attn_as_float = self.softmax(attn.float())
         attn = attn_as_float.to(attn_dtype)
+        """
+
+        # fix export op 'to'
+
+        attn = self.softmax(attn)
         attn = self.attn_dropout(attn)
 
         # weighted sum

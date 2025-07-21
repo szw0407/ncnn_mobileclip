@@ -130,12 +130,14 @@ class MHSA(nn.Module):
         N = H * W
         if len(shape) == 4:
             x = torch.flatten(x, start_dim=2).transpose(-2, -1)  # (B, N, C)
+
+        # fix bacth cant reshape
         qkv = (
             self.qkv(x)
-            .reshape(B, N, 3, self.num_heads, self.head_dim)
-            .permute(2, 0, 3, 1, 4)
+            .reshape(B, N, 3, self.num_heads , self.head_dim)
+            .permute(0, 2, 3, 1, 4) # B N 3 num_heads head_dim -> B, 3, num_heads, N, head_dim
         )
-        q, k, v = qkv.unbind(0)  # make torchscript happy (cannot use tensor as tuple)
+        q, k, v = qkv.unbind(1)  # make torchscript happy (cannot use tensor as tuple)
 
         # trick here to make q@k.t more stable
         attn = (q * self.scale) @ k.transpose(-2, -1)
