@@ -1,6 +1,6 @@
-# MobileClip NCNN 导出
+# MobileClip NCNN
 
-## 使用方法
+## 使用方法(导出)
 ### 下载权重
 将下载的权重mobileclip_xxx.pt权重文件放在 checkpoints/ 目录下。
 ### 导出模型
@@ -31,3 +31,8 @@ mobileclip_s0,mobileclip_s1,mobileclip_s2,mobileclip_b,mobileclip_blt
 ncnn模型验证完成。
 ```
 说明模型导出成功。
+
+## 使用方法(推理)
+
+cpp推理代码见ncnn_mobileclip_infer
+把导出的模型参照代码放在合适位置即可
