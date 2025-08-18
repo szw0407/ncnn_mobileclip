@@ -8,6 +8,7 @@ import mobileclip
 
 import ncnn
 
+
 # 定义图像编码器模块
 class ClipImageEncoder(nn.Module):
     def __init__(self, model):
@@ -29,6 +30,19 @@ class ClipTextEncoder(nn.Module):
         self.final_layer_norm = model.text_encoder.final_layer_norm
         self.projection_layer = model.text_encoder.projection_layer
 
+        self.causal_masking = model.text_encoder.causal_masking
+
+    def build_attention_mask(self, context_length: int, batch_size: int):
+        """Build causal attention mask [batch_size, context_length, context_length]."""
+        # Build mask with full attention between the tokens
+        # pytorch uses additive attention mask; fill with -inf
+        mask = torch.empty(context_length, context_length)
+        mask.fill_(float("-inf"))
+        mask.triu_(1)  # zero out the lower diagonal
+        mask = mask.unsqueeze(0)  # add dummy batch dimension
+        mask = mask.expand(batch_size, -1, -1)
+        return mask
+
     def forward(self, text_tokens, return_all_tokens=True):
         token_emb = self.embedding_layer(text_tokens)
         seq_len = token_emb.shape[1]
@@ -38,8 +52,17 @@ class ClipTextEncoder(nn.Module):
             )
         token_emb = self.embedding_dropout(token_emb)
 
-        for layer in self.transformer:
-            token_emb = layer(token_emb)
+        if self.causal_masking:
+            attn_mask = self.build_attention_mask(
+                context_length=text_tokens.shape[1], batch_size=text_tokens.shape[0]
+            )
+            attn_mask = attn_mask.to(device=token_emb.device, dtype=token_emb.dtype)
+
+            for layer in self.transformer:
+                token_emb = layer(token_emb, attn_mask=attn_mask)
+        else:
+            for layer in self.transformer:
+                token_emb = layer(token_emb)
 
         token_emb = self.final_layer_norm(token_emb)
 
@@ -52,6 +75,7 @@ class ClipTextEncoder(nn.Module):
         token_emb = token_emb @ self.projection_layer
         return token_emb
 
+
 class ClipProjection(nn.Module):
     def __init__(self, model):
         super().__init__()
@@ -59,6 +83,7 @@ class ClipProjection(nn.Module):
 
     def forward(self, x):
         return x @ self.projection_layer
+
 
 def export(model_name, image_path=None, fp16=False):
     # 验证模型名称有效性
@@ -96,21 +121,21 @@ def export(model_name, image_path=None, fp16=False):
     image_encoder = ClipImageEncoder(model)
     pnnx.export(image_encoder,
                 f'{export_dir}/image_encoder.pt',
-                input_image,fp16=fp16)
+                input_image, fp16=fp16)
 
     # 导出文本编码器
     text_encoder = ClipTextEncoder(model)
     input_text = tokenizer(["Test"])  # 单样本输入
     pnnx.export(text_encoder,
                 f'{export_dir}/text_encoder.pt',
-                input_text,fp16=fp16)
+                input_text, fp16=fp16)
 
     # 导出投影层
     input_embed = torch.ones((1, 1, 512), dtype=torch.float32)
     projection_layer = ClipProjection(model)
     pnnx.export(projection_layer,
                 f'{export_dir}/projection_layer.pt',
-                input_embed,fp16=fp16)
+                input_embed, fp16=fp16)
 
     print(f"模型已成功导出到: {export_dir}/")
     print(f"图像编码器输入尺寸: {input_image.shape}")
@@ -141,7 +166,6 @@ def export(model_name, image_path=None, fp16=False):
     else:
         print(f"图像编码器验证失败，MSE: {loss:.12f}")
         raise RuntimeError("图像编码器验证失败！")
-
 
     # 文本
     with ncnn.Net() as net:
@@ -187,14 +211,10 @@ def export(model_name, image_path=None, fp16=False):
     print("ncnn模型验证完成。")
 
 
-
 # 使用示例
 if __name__ == '__main__':
     # 导出 mobileclip_s0 模型
-    export('mobileclip_s0', image_path="docs/fig_accuracy_latency.png")
-    export('mobileclip_s1', image_path="docs/fig_accuracy_latency.png")
-    export('mobileclip_s2', image_path="docs/fig_accuracy_latency.png")
-    export('mobileclip_b', image_path="docs/fig_accuracy_latency.png")
-    # 导出其他模型示例
-    # export('mobileclip_b')
-    # export('mobileclip_s1')
+    export('mobileclip_blt', image_path="docs/fig_accuracy_latency.png")
+    # export('mobileclip_s1', image_path="docs/fig_accuracy_latency.png")
+    # export('mobileclip_s2', image_path="docs/fig_accuracy_latency.png")
+    # export('mobileclip_b', image_path="docs/fig_accuracy_latency.png")
