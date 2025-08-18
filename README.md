@@ -3,6 +3,12 @@
 ## 使用方法(导出)
 ### 下载权重
 将下载的权重mobileclip_xxx.pt权重文件放在 checkpoints/ 目录下。
+
+### 模型下载
+
+本项目提供导出好的模型：
+[Google Drive](https://drive.google.com/file/d/1WFQEwWxUCFhDASbXv7fAlXUHn1BnVGGI/view?usp=drive_link)
+
 ### 导出模型
 修改export.py中的代码
 ```
