@@ -43,6 +43,10 @@ ncnn模型验证完成。
 cpp推理代码见ncnn_mobileclip_infer
 把导出的模型参照代码放在合适位置即可
 
+## MobileCLIP2
+
+MobileCLIP2 的 NCNN 适配放在 `mobileclip2_ncnn/`，当前优先支持 `MobileCLIP2-S0` 和 `MobileCLIP2-S2`。用法见 `mobileclip2_ncnn/README.md`。
+
 ## 交流群
 
 QQ群：767178345(计算机视觉交流群)

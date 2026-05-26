@@ -128,6 +128,12 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+# Local model checkpoints and generated ncnn exports
+checkpoints/
+models/
+mobileclip2_ncnn/checkpoints/
+mobileclip2_ncnn/models/
+mobileclip2_ncnn/exports/
+
 # macOS
 **/.DS_Store
-
