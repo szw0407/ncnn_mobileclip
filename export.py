@@ -89,7 +89,7 @@ def export(model_name, image_path=None, fp16=False):
     # 验证模型名称有效性
     valid_models = [
         'mobileclip_s0', 'mobileclip_s1', 'mobileclip_s2',
-        'mobileclip_b', 'mobileclip_blt'
+        'mobileclip_b', 'mobileclip_blt', 'mobileviclip_tiny', 'mobileviclip_small'
     ]
     if model_name not in valid_models:
         raise ValueError(f"无效的模型名称。可选模型: {', '.join(valid_models)}")
